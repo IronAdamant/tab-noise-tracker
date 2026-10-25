@@ -8,6 +8,12 @@ It is the browser-tab sibling of [Windows Sound Tracker](https://github.com/Iron
 
 The extension is local. It is plain HTML, CSS, and JavaScript. There is no build step, no package install, and no network request.
 
+## Demo
+
+A 30-second screen recording showing the extension detecting several noisy tabs, flashing their favicons orange, and jumping to one from the popup:
+
+[Watch the demo (MP4)](https://github.com/IronAdamant/tab-noise-tracker/releases/download/v1.0.3/tab-noise-tracker-demo.mp4)
+
 ## What it does
 
 ### 1. Noise detection
