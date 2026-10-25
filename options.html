@@ -9,16 +9,15 @@
   <a class="skip" href="#main">Skip to settings</a>
   <main id="main">
     <h1>Visual alert settings</h1>
-    <p class="lede">When a tab starts making sound, its favicon and title flash in the tab strip, and the toolbar icon can flash too. The on-page overlay is off unless you turn it on. The default speed is one pulse every 1.5 seconds. Settings save on this device.</p>
+    <p class="lede">When a tab starts making sound, its favicon flashes in the tab strip, and the toolbar icon can flash too. The page title stays as the site wrote it. The on-page overlay is off unless you turn it on. The default speed is one pulse every 1.5 seconds. Settings save on this device.</p>
     <p id="motion" role="status"></p>
 
     <fieldset>
       <legend>Where the alert appears</legend>
-      <label class="check"><input id="favicon-flash" type="checkbox" checked> <span>Favicon flash. The tab icon pulses in your alert colour. This is the main tab-strip signal.</span></label>
-      <label class="check"><input id="title-marker" type="checkbox" checked> <span>Tab title marker. The tab label pulses between two speaker symbols.</span></label>
+      <label class="check"><input id="favicon-flash" type="checkbox" checked> <span>Favicon flash. The tab icon pulses in your alert colour. This is the only tab-strip signal.</span></label>
       <label class="check"><input id="toolbar" type="checkbox" checked> <span>Toolbar flash. The extension icon and badge change colour.</span></label>
       <label class="check"><input id="overlay" type="checkbox"> <span>On-page flash. An optional border, wash, or banner drawn inside the page.</span></label>
-      <p id="surface-note">Chrome does not allow flashing the actual tab strip, so the favicon and label are the tab-level signal and the on-page flash is an optional overlay drawn inside the page.</p>
+      <p id="surface-note">Chrome does not allow flashing the actual tab strip, so the favicon is the tab-level signal. The page title is not changed. The on-page flash is an optional overlay drawn inside the page.</p>
     </fieldset>
 
     <fieldset>
@@ -48,13 +47,13 @@
         <label for="interval">Time between pulses <output id="interval-value">1.5 s</output></label>
         <input id="interval" type="range" min="500" max="2500" step="100" value="1500" aria-describedby="interval-help">
         <p class="endpoints"><span>0.5 s, faster</span><span>2.5 s, slower</span></p>
-        <p id="interval-help">The fastest setting is two pulses per second, under the common three-per-second safety line. Default is one pulse every 1.5 seconds. The favicon, title, and on-page overlay share this speed.</p>
+        <p id="interval-help">The fastest setting is two pulses per second, under the common three-per-second safety line. Default is one pulse every 1.5 seconds. The favicon and the on-page overlay share this speed.</p>
       </div>
 
       <div class="slider">
         <label for="pulse-count">Number of pulses <output id="pulse-value">4</output></label>
         <input id="pulse-count" type="range" min="1" max="8" step="1" value="4" aria-describedby="pulse-help">
-        <p id="pulse-help">The favicon, title, and on-page overlay share this count. After the pulses, a steady highlight stays for about 12 seconds so you can still find the tab. Dismiss it sooner from the banner or the popup.</p>
+        <p id="pulse-help">The favicon and the on-page overlay share this count. After the pulses, a steady highlight stays for about 12 seconds so you can still find the tab. Dismiss it sooner from the banner or the popup.</p>
       </div>
 
       <label class="check"><input id="continuous" type="checkbox"> <span>Keep flashing until I dismiss it. A safety stop ends it after 6 hours.</span></label>
@@ -67,7 +66,7 @@
     </fieldset>
 
     <p id="warning" role="status"></p>
-    <p class="note">If your system asks to reduce motion, the alert is a steady highlight instead of a pulse, including a steady coloured favicon. A full-window flash at high speed is the riskiest combination. The favicon and title stay on the tab. An on-page border covers less of the page than a solid wash.</p>
+    <p class="note">If your system asks to reduce motion, the alert is a steady highlight instead of a pulse, including a steady coloured favicon. A full-window flash at high speed is the riskiest combination. The favicon stays on the tab, and the page title is left alone. An on-page border covers less of the page than a solid wash.</p>
 
     <div class="actions">
       <button id="test-flash" class="primary" type="button">Test flash</button>

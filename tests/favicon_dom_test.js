@@ -262,10 +262,11 @@ function testReducedMotionSteady() {
   link('icon', '/steady.ico');
   assert.strictEqual(TabNoiseVisual.start(settings({ titleMarker: true, color: '#1D6FEA' }), 'audible'), true);
   assert.strictEqual(timeoutCalls, 1);
-  assert.ok(document.title.indexOf(TabNoiseModel.BRIGHT_PREFIX) === 0);
+  assert.strictEqual(document.title, 'Fixture');
   const href = pulseLinks()[0].getAttribute('href');
   flushObservers();
   assert.strictEqual(pulseLinks()[0].getAttribute('href'), href);
+  assert.strictEqual(document.title, 'Fixture');
   TabNoiseVisual.stop(true);
   assert.strictEqual(document.title, 'Fixture');
   assert.deepStrictEqual(iconHrefs(), ['icon /steady.ico']);
