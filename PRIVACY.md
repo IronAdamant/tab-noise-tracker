@@ -1,6 +1,6 @@
 # Privacy Policy — Tab Noise Tracker
 
-_Last updated: 25 October 2026_
+_Last updated: 26 October 2026_
 
 Tab Noise Tracker is a browser extension that helps you find which open tab is making sound and control it (mute, focus, or close) with an optional visual alert.
 
