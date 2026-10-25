@@ -13,7 +13,7 @@ Tab Noise Tracker does not collect, store, transmit, or sell any of your data. E
 - **Tab information (titles and audible/muted state):** read locally so the extension can list which tabs are making sound and let you mute, jump to, or close them. This information is used in the moment and is never sent anywhere.
 - **Local settings storage:** your Focus mode state and visual-alert preferences (brightness, colour, style, and so on) are saved in your browser's local storage so they persist between sessions. This data stays on your device.
 - **Notifications (optional, off by default):** if you turn it on, the extension can show a local desktop notification when a tab starts making sound. No notification content leaves your device.
-- **On-page visual alert (scripting / host access):** when a visual alert is enabled, the extension injects a small script into the noisy tab to draw the flash overlay and add a marker to the tab's title. This script only draws the overlay and changes the title. It does not read, collect, or transmit the content of any web page.
+- **Tab-strip and optional on-page visual alert (scripting / host access):** when a visual alert runs, the extension injects a small script into the noisy tab. That script swaps the tab's favicon for an icon drawn locally in memory, remembers the existing favicon link only until the alert ends so it can put that link back, can add a marker to the tab's title, and can draw an optional overlay inside the page. It does not read the page body, does not fetch the site's favicon, does not save the favicon anywhere, and does not transmit anything. The same host access as before is used. No new permission is required.
 
 ## Data sharing
 

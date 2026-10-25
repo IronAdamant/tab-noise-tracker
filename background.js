@@ -24,10 +24,7 @@ function enqueue(task) {
 TN.enqueue = enqueue;
 
 async function init() {
-  const stored = await chrome.storage.local.get('settings');
-  if (!stored.settings) {
-    await chrome.storage.local.set({ settings: TabNoiseModel.DEFAULT_SETTINGS });
-  }
+  await TN.ensureSettings();
   await TN.reapplyFocus();
   await TN.purgeRuntime();
   await TN.refreshBadge();

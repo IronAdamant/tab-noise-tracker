@@ -1,4 +1,4 @@
-/* chrome.storage access for Focus mode and short-lived alert state. */
+/* chrome.storage access for settings, Focus mode, and short-lived alert state. */
 'use strict';
 
 (function () {
@@ -7,6 +7,29 @@
   function mapOrEmpty(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
     return value;
+  }
+
+  function sameSettings(stored, normalized) {
+    if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return false;
+    const keys = Object.keys(normalized);
+    if (Object.keys(stored).length !== keys.length) return false;
+    for (let index = 0; index < keys.length; index += 1) {
+      const key = keys[index];
+      if (!Object.prototype.hasOwnProperty.call(stored, key)) return false;
+      if (stored[key] !== normalized[key]) return false;
+    }
+    return true;
+  }
+
+  // New installs get the current defaults. Saved switches stay as set.
+  // A missing faviconFlash (older installs) turns on without clearing overlay.
+  async function ensureSettings() {
+    const data = await chrome.storage.local.get('settings');
+    const normalized = TabNoiseModel.normalizeSettings(data.settings);
+    if (!sameSettings(data.settings, normalized)) {
+      await chrome.storage.local.set({ settings: normalized });
+    }
+    return normalized;
   }
 
   async function getSettings() {
@@ -66,6 +89,7 @@
     }
   }
 
+  TN.ensureSettings = ensureSettings;
   TN.getSettings = getSettings;
   TN.getFocusState = getFocusState;
   TN.setFocusState = setFocusState;

@@ -1,8 +1,15 @@
-/* On-page flash and title marker. Isolated world: it does not read the page or touch audio. */
+/* Tab-strip favicon pulse, title marker, and optional on-page flash.
+   Isolated world: it draws locally, restores the favicon and title, and does not read page content or touch audio. */
 'use strict';
 
 (function () {
   const HOST_ID = 'tab-noise-tracker-alert';
+  const FAVICON_WATCH = {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['href', 'rel', 'type', 'sizes', 'media']
+  };
   let session = 0;
   let pulseTimer = null;
   let endTimer = null;
@@ -12,6 +19,17 @@
   let titleActive = false;
   let originalTitle = '';
   let expectedTitle = '';
+  let faviconObserver = null;
+  let faviconWatchRoot = null;
+  let faviconActive = false;
+  let faviconTouched = false;
+  let faviconBright = true;
+  let faviconSettings = null;
+  let savedIcons = null;
+  let iconCacheKey = '';
+  let iconBrightUrl = '';
+  let iconDimUrl = '';
+  let lastAppliedHref = '';
 
   function style(node, pairs) {
     Object.keys(pairs).forEach(function (key) {
@@ -73,6 +91,225 @@
       applyTitle(prefix);
     });
     observer.observe(rootNode, { subtree: true, childList: true, characterData: true });
+  }
+
+  // Chrome will not restyle the tab strip. These icon links are the tab-level signal.
+  function fillRoundRect(ctx, x, y, width, height, radius) {
+    const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + width, y, x + width, y + height, r);
+    ctx.arcTo(x + width, y + height, x, y + height, r);
+    ctx.arcTo(x, y + height, x, y, r);
+    ctx.arcTo(x, y, x + width, y, r);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function renderIcon(color, bright, intensity) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+    const rgb = TabNoiseModel.hexToRgb(color);
+    const level = Math.min(100, Math.max(10, intensity));
+    const span = bright
+      ? Math.round(16 + (level / 100) * 10)
+      : Math.round(7 + ((100 - level) / 100) * 5);
+    const origin = Math.round((32 - span) / 2);
+    const radius = Math.max(3, Math.round(span * 0.28));
+    ctx.clearRect(0, 0, 32, 32);
+    ctx.fillStyle = bright ? 'rgba(27, 20, 4, 0.95)' : 'rgba(27, 20, 4, 0.28)';
+    fillRoundRect(ctx, origin - 2, origin - 2, span + 4, span + 4, radius + 2);
+    const alpha = bright ? 1 : 0.2 + ((100 - level) / 100) * 0.25;
+    ctx.fillStyle = 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
+    fillRoundRect(ctx, origin, origin, span, span, radius);
+    return canvas.toDataURL('image/png');
+  }
+
+  function iconUrls(settings) {
+    const key = settings.color + ':' + settings.intensity;
+    if (key === iconCacheKey && iconBrightUrl && iconDimUrl) {
+      return { bright: iconBrightUrl, dim: iconDimUrl };
+    }
+    iconBrightUrl = renderIcon(settings.color, true, settings.intensity);
+    iconDimUrl = renderIcon(settings.color, false, settings.intensity);
+    iconCacheKey = iconBrightUrl && iconDimUrl ? key : '';
+    return { bright: iconBrightUrl, dim: iconDimUrl };
+  }
+
+  function collectPageIconElements() {
+    return Array.from(document.querySelectorAll('link')).filter(function (node) {
+      return node.getAttribute('data-tn-favicon') !== 'pulse' &&
+        TabNoiseModel.isFaviconRel(node.getAttribute('rel'));
+    });
+  }
+
+  function snapshotLink(link) {
+    const attrs = {};
+    Array.from(link.attributes).forEach(function (attr) {
+      if (attr.name === 'data-tn-favicon') return;
+      attrs[attr.name] = attr.value;
+    });
+    return attrs;
+  }
+
+  function removePulseLinks() {
+    document.querySelectorAll('link[data-tn-favicon="pulse"]').forEach(function (node) {
+      if (node.parentNode) node.parentNode.removeChild(node);
+    });
+  }
+
+  function insertFaviconRecord(record) {
+    const head = document.head || document.documentElement;
+    if (!head || !record) return;
+    const link = document.createElement('link');
+    Object.keys(record).forEach(function (name) {
+      if (name === 'data-tn-favicon' || typeof record[name] !== 'string') return;
+      link.setAttribute(name, record[name]);
+    });
+    head.appendChild(link);
+  }
+
+  function insertPulseLink(dataUrl) {
+    const head = document.head || document.documentElement;
+    if (!head) throw new Error('No document for the favicon.');
+    const link = document.createElement('link');
+    link.setAttribute('rel', 'icon');
+    link.setAttribute('type', 'image/png');
+    link.setAttribute('sizes', '32x32');
+    link.setAttribute('data-tn-favicon', 'pulse');
+    link.setAttribute('href', dataUrl);
+    head.appendChild(link);
+    lastAppliedHref = link.getAttribute('href') || dataUrl;
+  }
+
+  function disconnectFaviconWatch() {
+    if (faviconObserver) faviconObserver.disconnect();
+    faviconObserver = null;
+    faviconWatchRoot = null;
+  }
+
+  function ensureFaviconWatch() {
+    const root = document.head || document.documentElement;
+    if (!faviconObserver || !faviconActive || !root) return;
+    if (faviconWatchRoot === root) return;
+    faviconObserver.disconnect();
+    faviconWatchRoot = root;
+    faviconObserver.observe(root, FAVICON_WATCH);
+  }
+
+  function pauseFaviconWatch(work) {
+    if (faviconObserver) faviconObserver.disconnect();
+    faviconWatchRoot = null;
+    try {
+      work();
+    } finally {
+      if (faviconObserver && faviconActive) ensureFaviconWatch();
+    }
+  }
+
+  function rememberForeignPulseHref() {
+    const pulse = document.querySelector('link[data-tn-favicon="pulse"]');
+    if (!pulse) return;
+    const href = pulse.getAttribute('href');
+    if (!href || href === lastAppliedHref) return;
+    savedIcons = TabNoiseModel.preferLiveFavicons(savedIcons, [{ rel: 'icon', href: href }]);
+  }
+
+  function absorbLiveIcons() {
+    const live = collectPageIconElements();
+    if (!live.length) return;
+    savedIcons = TabNoiseModel.preferLiveFavicons(savedIcons, live.map(snapshotLink));
+    live.forEach(function (node) {
+      if (node.parentNode) node.parentNode.removeChild(node);
+    });
+  }
+
+  function faviconNeedsReassert() {
+    if (collectPageIconElements().length) return true;
+    const pulse = document.querySelector('link[data-tn-favicon="pulse"]');
+    if (!pulse) return true;
+    return pulse.getAttribute('href') !== lastAppliedHref;
+  }
+
+  function restoreFavicon() {
+    if (!faviconTouched || !globalThis.TabNoiseModel) return;
+    try {
+      const live = collectPageIconElements().map(snapshotLink);
+      const plan = TabNoiseModel.planFaviconRestore(savedIcons, live);
+      removePulseLinks();
+      if (!plan.leaveLive) plan.recreate.forEach(insertFaviconRecord);
+    } catch (error) {
+      try { removePulseLinks(); } catch (ignore) {}
+    }
+    faviconTouched = false;
+    faviconSettings = null;
+    savedIcons = null;
+    iconCacheKey = '';
+    iconBrightUrl = '';
+    iconDimUrl = '';
+    lastAppliedHref = '';
+  }
+
+  function paintFavicon(bright) {
+    if (!faviconActive || !faviconSettings) return;
+    faviconBright = !!bright;
+    let dataUrl = '';
+    try {
+      const urls = iconUrls(faviconSettings);
+      dataUrl = bright ? urls.bright : urls.dim;
+    } catch (error) {
+      return;
+    }
+    if (!dataUrl) return;
+    const pulse = document.querySelector('link[data-tn-favicon="pulse"]');
+    if (pulse && pulse.getAttribute('href') === lastAppliedHref && lastAppliedHref === dataUrl &&
+        !collectPageIconElements().length) {
+      return;
+    }
+    try {
+      pauseFaviconWatch(function () {
+        rememberForeignPulseHref();
+        absorbLiveIcons();
+        removePulseLinks();
+        insertPulseLink(dataUrl);
+      });
+    } catch (error) {
+      faviconActive = false;
+      disconnectFaviconWatch();
+      restoreFavicon();
+    }
+  }
+
+  function watchFavicon(token) {
+    const root = document.head || document.documentElement;
+    if (!root || typeof MutationObserver !== 'function') return;
+    faviconObserver = new MutationObserver(function () {
+      if (token !== session || !faviconActive) return;
+      try {
+        if (!faviconNeedsReassert()) return;
+        paintFavicon(faviconBright);
+      } catch (error) {
+        // Title and overlay keep their own timers. stop() still restores the icon.
+      }
+    });
+    faviconWatchRoot = null;
+    ensureFaviconWatch();
+  }
+
+  function beginFavicon(settings, token) {
+    faviconSettings = settings;
+    savedIcons = collectPageIconElements().map(snapshotLink);
+    faviconTouched = true;
+    faviconActive = true;
+    faviconBright = true;
+    iconCacheKey = '';
+    iconBrightUrl = '';
+    iconDimUrl = '';
+    lastAppliedHref = '';
+    watchFavicon(token);
   }
 
   function phraseFor(reason) {
@@ -208,10 +445,13 @@
   function stop(silent) {
     session += 1;
     clearTimers();
+    faviconActive = false;
     if (observer) observer.disconnect();
     observer = null;
+    disconnectFaviconWatch();
     if (host && host.parentNode) host.parentNode.removeChild(host);
     host = null;
+    restoreFavicon();
     restoreTitle();
     if (!silent && running) tell({ type: 'tn-flash-ended' });
     running = false;
@@ -220,7 +460,7 @@
   function start(config, reason) {
     if (!globalThis.TabNoiseModel || !document.documentElement) return false;
     const settings = TabNoiseModel.normalizeSettings(config);
-    if (!settings.overlay && !settings.titleMarker) return false;
+    if (!TabNoiseModel.alertSurfaces(settings).page) return false;
     stop(true);
     const token = session;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -232,6 +472,7 @@
         applyTitle(TabNoiseModel.BRIGHT_PREFIX);
         watchTitle(token);
       }
+      if (settings.faviconFlash) beginFavicon(settings, token);
       if (settings.overlay) overlay = buildOverlay(settings, flashReason);
     } catch (error) {
       stop(true);
@@ -244,11 +485,13 @@
       if (settings.titleMarker) {
         applyTitle(bright ? TabNoiseModel.BRIGHT_PREFIX : TabNoiseModel.DIM_PREFIX);
       }
+      if (settings.faviconFlash) paintFavicon(bright);
     };
     const hold = function () {
       if (token !== session) return;
       if (overlay) overlay.paint(true);
       if (settings.titleMarker) applyTitle(TabNoiseModel.BRIGHT_PREFIX);
+      if (settings.faviconFlash) paintFavicon(true);
       if (settings.toolbar) tell({ type: 'tn-toolbar-hold' });
     };
 
