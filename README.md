@@ -48,11 +48,15 @@ Focus mode keeps a single listening tab unmuted and mutes every other tab.
 
 ### Visual alerts
 
-Visual flashing is a primary signal, not a decoration. When a tab becomes audible, the extension flashes so you can see the source without hearing it. The same flash runs when Focus mode mutes a tab that was producing sound, if that option is on.
+A **Visual alerts** switch in the popup, directly above Focus mode, turns every automatic flash on or off. The same switch is at the top of Visual alert settings. It is on after a new install. If you update from a version that never saved this switch, it turns on, so the flashes you already rely on keep going until you turn them off.
+
+The switch only controls flashing. The popup still lists every tab that is making sound, and mute, jump, focus, and close still work. Focus mode still keeps a single listening tab unmuted. While the switch is off, a tab becoming audible does not flash, and Focus mode does not flash the tab it mutes. The favicon, toolbar, and on-page choices stay saved and apply again when you turn alerts back on. Those per-surface switches are shown as inactive while the master switch is off. **Test flash** still runs from Visual alert settings, so you can preview a flash without leaving the switch on.
+
+Visual flashing is a primary signal when the switch is on. When a tab becomes audible, the extension flashes so you can see the source without hearing it. The same flash runs when Focus mode mutes a tab that was producing sound, if that option is on.
 
 Chrome does not let an extension recolour the tab strip itself. The tab-level signal is the favicon. The page title is not modified. The on-page overlay is an optional extra inside the page.
 
-New installs start with the favicon flash and toolbar flash on, and the on-page overlay off. If you already saved settings, those switches stay as you set them. The favicon switch turns on if it was never saved. A saved title-marker switch is ignored and removed; the extension no longer prefixes the tab title.
+New installs start with Visual alerts on, the favicon flash and toolbar flash on, and the on-page overlay off. If you already saved settings, those switches stay as you set them. The favicon switch and the Visual alerts switch turn on if they were never saved. A saved title-marker switch is ignored and removed; the extension no longer prefixes the tab title.
 
 Three surfaces, each with its own switch:
 
@@ -70,13 +74,13 @@ Open **Visual alert settings** for:
 - Time between pulses, and how many pulses run. The favicon and the on-page overlay share both.
 - Continuous flashing until you dismiss it. A safety stop ends that mode after 6 hours.
 - Independent switches for the three surfaces, for "flash when Focus mode mutes a tab", and for silent OS notifications.
-- **Test flash**, which runs on the settings tab so you can judge the tab icon, colour, and speed, and also exercises the toolbar icon.
+- **Test flash**, which runs on the settings tab so you can judge the tab icon, colour, and speed, and also exercises the toolbar icon. It still runs when Visual alerts is off, as a preview. The saved master switch stays off.
 
 After a finite number of pulses, a steady highlight remains for about 12 seconds, including a steady coloured favicon. Dismiss it from the banner (when the on-page flash is on), the settings page, or the popup. If the sound stops, an alert that was only saying "this tab started" clears as well, and the original favicon comes back. A "Focus mode muted this tab" alert stays for its normal time so the silenced tab is still findable.
 
 **Safety.** The fastest setting is two pulses per second, which stays under the common guidance of three flashes per second. The default is slower: one pulse every 1.5 seconds, at 70% brightness, with the on-page overlay off. The page warns when you choose a faster speed, a very bright full-window flash, continuous flashing, or a saturated red. If the operating system asks for reduced motion, the alert is a steady highlight for about 12 seconds instead of a pulse, including a steady coloured favicon. Reduced motion wins over the continuous option. Reduced motion is checked on the page itself, and again whenever you open the popup or the settings.
 
-The flash script cannot run on browser pages such as `chrome://` settings, the Chrome Web Store, or other extensions, so those tabs cannot change their favicon or overlay. They still show up in the popup, and the toolbar still changes. A discarded (asleep) tab is not woken just to draw a flash; open it and the flash is retried if it is still active.
+The flash script cannot run on browser pages such as `chrome://` settings, the Chrome Web Store, or other extensions, so those tabs cannot change their favicon or overlay. They still show up in the popup. While Visual alerts are on, the toolbar still changes for those pages. A discarded (asleep) tab is not woken just to draw a flash; open it and the flash is retried if it is still active.
 
 ### Tab alerts
 
@@ -127,22 +131,24 @@ The injected script runs in an isolated world. It swaps the favicon for an icon 
 node tests/logic_test.js
 node tests/favicon_dom_test.js
 node tests/focus_leak_test.js
+node tests/visual_alerts_gate_test.js
 python3 tools/draw_icons.py   # redraws the original icons; not required to run the extension
 ```
 
-Those checks cover settings limits (including the favicon-flash default and older saved settings), contrast of the badge and colour presets, Focus mute/restore plans, favicon restore planning, and how rows are sorted and labelled. `favicon_dom_test.js` loads the real content script against a tiny local stand-in for the page and checks that the pulsing icon is removed and the original favicon links come back. `focus_leak_test.js` turns Focus mode on and off and re-runs the alert, and checks that the page title stays unchanged and that listeners, observers, and timers do not grow. They do not start Chrome.
+Those checks cover settings limits (including the favicon-flash default, the visual-alerts default, and older saved settings), contrast of the badge and colour presets, Focus mute/restore plans, favicon restore planning, and how rows are sorted and labelled. `favicon_dom_test.js` loads the real content script against a tiny local stand-in for the page and checks that the pulsing icon is removed and the original favicon links come back. `focus_leak_test.js` turns Focus mode on and off and re-runs the alert, and checks that the page title stays unchanged and that listeners, observers, and timers do not grow. `visual_alerts_gate_test.js` checks that a missing visual-alerts switch turns on, and that while it is off an audible tab and a Focus mute do not inject a flash. They do not start Chrome.
 
 ## Trying it in Chrome
 
 1. Load the extension unpacked.
 2. Open two windows and play audio in one tab. The badge count should rise, and the popup should name the tab and the window.
 3. Mute, unmute, jump, and close from the popup. Mute from Chrome's own tab control too, with Focus mode on, and confirm sound follows an unmute.
-4. Turn Focus mode on. Only the active tab should stay unmuted. Switch tabs and confirm the previous noisy tab is muted and flashes. Start audio in a background tab and confirm sound moves there. Turn Focus mode off and confirm the earlier mute states return. Restart Chrome and confirm Focus mode is still on.
-5. Open `tests/fixture/sound.html` from a local web server (not `file://`). Play the tone. The tab's favicon should blink in the colour chosen in settings. The page title should stay exactly as it was. No border or wash should appear on the page unless you turn the on-page flash back on. Stop the tone and confirm the blue fixture icon returns.
-6. Open Visual alert settings. Use Test flash and watch this tab's icon. Turn the on-page flash on and try border, solid, and text styles. Move brightness and speed and confirm the warning appears for fast, very bright, continuous, or saturated-red choices. Turn each surface off and on. Set the OS to reduce motion and confirm the test is a steady highlight, including a steady coloured favicon.
-7. Turn on Tab alerts, start audio in a background tab, and confirm a silent notification. Click it and confirm the tab is focused.
-8. Open `chrome://extensions` (or any `chrome://` page) and confirm the popup explains that the page itself cannot change its favicon or show an overlay.
-9. With no audio playing, confirm the empty state and a cleared badge.
+4. Turn Focus mode on. Only the active tab should stay unmuted. Switch tabs and confirm the previous noisy tab is muted and, while Visual alerts are on, flashes. Start audio in a background tab and confirm sound moves there. Turn Focus mode off and confirm the earlier mute states return. Restart Chrome and confirm Focus mode is still on.
+5. Turn Visual alerts off with the switch above Focus mode. Play audio again. The popup still names the tab, and mute, jump, and Focus mode still work, but the favicon and toolbar do not flash. Turn Visual alerts back on and confirm the flash returns. In Visual alert settings, turn Visual alerts off and use Test flash: the preview still runs, and the favicon, toolbar, and on-page switches stay as you set them.
+6. Open `tests/fixture/sound.html` from a local web server (not `file://`). Play the tone. The tab's favicon should blink in the colour chosen in settings. The page title should stay exactly as it was. No border or wash should appear on the page unless you turn the on-page flash back on. Stop the tone and confirm the blue fixture icon returns.
+7. Open Visual alert settings. Use Test flash and watch this tab's icon. Turn the on-page flash on and try border, solid, and text styles. Move brightness and speed and confirm the warning appears for fast, very bright, continuous, or saturated-red choices. Turn each surface off and on. Set the OS to reduce motion and confirm the test is a steady highlight, including a steady coloured favicon.
+8. Turn on Tab alerts, start audio in a background tab, and confirm a silent notification. Click it and confirm the tab is focused.
+9. Open `chrome://extensions` (or any `chrome://` page) and confirm the popup explains that the page itself cannot change its favicon or show an overlay.
+10. With no audio playing, confirm the empty state and a cleared badge.
 
 ## Limits
 
@@ -174,6 +180,7 @@ tools/draw_icons.py
 tests/logic_test.js
 tests/favicon_dom_test.js
 tests/focus_leak_test.js
+tests/visual_alerts_gate_test.js
 tests/fixture/sound.html
 ```
 

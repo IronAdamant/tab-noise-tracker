@@ -5,6 +5,8 @@
   const summary = document.getElementById('summary');
   const list = document.getElementById('tab-list');
   const empty = document.getElementById('empty');
+  const alertsToggle = document.getElementById('alerts-toggle');
+  const alertsState = document.getElementById('alerts-state');
   const focusToggle = document.getElementById('focus-toggle');
   const focusState = document.getElementById('focus-state');
   const shortcut = document.getElementById('shortcut');
@@ -146,6 +148,8 @@
 
   function render(model) {
     if (summary.textContent !== model.summary) summary.textContent = model.summary;
+    alertsToggle.setAttribute('aria-checked', model.settings.visualAlerts ? 'true' : 'false');
+    alertsState.textContent = model.settings.visualAlerts ? 'On' : 'Off';
     focusToggle.setAttribute('aria-checked', model.focusEnabled ? 'true' : 'false');
     focusState.textContent = model.focusEnabled ? 'On' : 'Off';
     if (document.activeElement !== tabAlerts && tabAlerts.checked !== model.settings.tabAlerts) {
@@ -184,6 +188,26 @@
     return response;
   }
 
+  async function saveSettings(partial) {
+    const local = await chrome.storage.local.get('settings');
+    const next = TabNoiseModel.mergeSettings(local.settings, partial);
+    await chrome.storage.local.set({ settings: next });
+  }
+
+  alertsToggle.addEventListener('click', async function () {
+    const enabled = alertsToggle.getAttribute('aria-checked') !== 'true';
+    alertsToggle.disabled = true;
+    try {
+      await saveSettings({ visualAlerts: enabled });
+      showError('');
+      await refresh();
+    } catch (err) {
+      showError(explain(err));
+    } finally {
+      alertsToggle.disabled = false;
+    }
+  });
+
   focusToggle.addEventListener('click', async function () {
     const enabled = focusToggle.getAttribute('aria-checked') !== 'true';
     focusToggle.disabled = true;
@@ -200,9 +224,7 @@
 
   tabAlerts.addEventListener('change', async function () {
     try {
-      const local = await chrome.storage.local.get('settings');
-      const next = TabNoiseModel.mergeSettings(local.settings, { tabAlerts: tabAlerts.checked });
-      await chrome.storage.local.set({ settings: next });
+      await saveSettings({ tabAlerts: tabAlerts.checked });
       showError('');
     } catch (err) {
       showError(explain(err));

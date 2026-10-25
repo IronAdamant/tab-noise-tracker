@@ -14,9 +14,21 @@
     </div>
   </header>
 
+  <section class="panel alerts-panel" aria-labelledby="alerts-heading">
+    <h2 id="alerts-heading" class="visually-hidden">Visual alerts</h2>
+    <button id="alerts-toggle" class="switch-toggle" type="button" role="switch" aria-checked="true" aria-describedby="alerts-help">
+      <span class="switch-text">
+        <span class="switch-name">Visual alerts</span>
+        <span class="switch-state" id="alerts-state">On</span>
+      </span>
+      <span class="switch-ui" aria-hidden="true"></span>
+    </button>
+    <p id="alerts-help">Flash the tab that's making sound.</p>
+  </section>
+
   <section class="panel focus-panel" aria-labelledby="focus-heading">
     <h2 id="focus-heading" class="visually-hidden">Focus mode</h2>
-    <button id="focus-toggle" type="button" role="switch" aria-checked="false" aria-describedby="focus-help">
+    <button id="focus-toggle" class="switch-toggle" type="button" role="switch" aria-checked="false" aria-describedby="focus-help">
       <span class="switch-text">
         <span class="switch-name">Focus mode</span>
         <span class="switch-state" id="focus-state">Off</span>

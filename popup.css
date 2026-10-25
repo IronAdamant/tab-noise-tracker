@@ -33,9 +33,10 @@ h1 {
   box-shadow: var(--shadow);
 }
 
+.alerts-panel,
 .focus-panel { margin-bottom: 12px; }
 
-#focus-toggle {
+.switch-toggle {
   width: 100%;
   display: flex;
   align-items: center;
@@ -70,15 +71,16 @@ h1 {
   background: #fffdf8;
 }
 
-#focus-toggle[aria-checked="true"] .switch-ui {
+.switch-toggle[aria-checked="true"] .switch-ui {
   background: var(--amber);
 }
 
-#focus-toggle[aria-checked="true"] .switch-ui::after {
+.switch-toggle[aria-checked="true"] .switch-ui::after {
   left: 22px;
   background: var(--amber-ink);
 }
 
+#alerts-help,
 #focus-help,
 #shortcut,
 .quiet-note {
@@ -205,7 +207,7 @@ footer {
 
 @media (forced-colors: active) {
   .switch-ui { background: ButtonFace; forced-color-adjust: none; }
-  #focus-toggle[aria-checked="true"] .switch-ui::after { background: ButtonText; }
+  .switch-toggle[aria-checked="true"] .switch-ui::after { background: ButtonText; }
   .tab-row.is-flashing { border-color: Highlight; box-shadow: none; }
   .mark { background: ButtonText !important; color: ButtonFace; }
 }

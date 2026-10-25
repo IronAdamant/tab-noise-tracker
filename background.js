@@ -212,6 +212,19 @@ if (chrome.notifications && chrome.notifications.onClicked) {
   });
 }
 
+chrome.storage.onChanged.addListener(function (changes, area) {
+  if (area !== 'local' || !changes.settings) return;
+  const next = TabNoiseModel.normalizeSettings(changes.settings.newValue);
+  if (next.visualAlerts) return;
+  const previous = TabNoiseModel.normalizeSettings(changes.settings.oldValue);
+  if (!previous.visualAlerts) return;
+  enqueue(function () {
+    return ready.then(function () {
+      return TN.stopAllFlashes();
+    });
+  });
+});
+
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   enqueue(function () {
     return ready.then(function () {

@@ -16,6 +16,7 @@
   const SILENCE_LIST_MS = 20000;
 
   const DEFAULT_SETTINGS = Object.freeze({
+    visualAlerts: true,
     faviconFlash: true,
     toolbar: true,
     overlay: false,
@@ -74,6 +75,7 @@
       ? source.style
       : DEFAULT_SETTINGS.style;
     return {
+      visualAlerts: source.visualAlerts == null ? DEFAULT_SETTINGS.visualAlerts : !!source.visualAlerts,
       faviconFlash: source.faviconFlash == null ? DEFAULT_SETTINGS.faviconFlash : !!source.faviconFlash,
       toolbar: source.toolbar == null ? DEFAULT_SETTINGS.toolbar : !!source.toolbar,
       overlay: source.overlay == null ? DEFAULT_SETTINGS.overlay : !!source.overlay,
@@ -94,8 +96,18 @@
     return normalizeSettings(Object.assign({}, current || {}, partial || {}));
   }
 
+  // The master switch gates every automatic surface. Sub-switches stay stored.
   function alertSurfaces(settings) {
     const safe = normalizeSettings(settings);
+    if (!safe.visualAlerts) {
+      return {
+        faviconFlash: false,
+        overlay: false,
+        toolbar: false,
+        page: false,
+        any: false
+      };
+    }
     const page = safe.faviconFlash || safe.overlay;
     return {
       faviconFlash: safe.faviconFlash,
