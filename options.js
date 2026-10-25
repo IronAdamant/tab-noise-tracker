@@ -4,7 +4,6 @@
 (function () {
   const fields = {
     faviconFlash: document.getElementById('favicon-flash'),
-    titleMarker: document.getElementById('title-marker'),
     toolbar: document.getElementById('toolbar'),
     overlay: document.getElementById('overlay'),
     focusMute: document.getElementById('focus-mute'),
@@ -42,7 +41,6 @@
   function readForm() {
     return TabNoiseModel.normalizeSettings({
       faviconFlash: fields.faviconFlash.checked,
-      titleMarker: fields.titleMarker.checked,
       toolbar: fields.toolbar.checked,
       overlay: fields.overlay.checked,
       flashOnFocusMute: fields.focusMute.checked,
@@ -65,7 +63,6 @@
   function fillForm(settings) {
     current = settings;
     fields.faviconFlash.checked = settings.faviconFlash;
-    fields.titleMarker.checked = settings.titleMarker;
     fields.toolbar.checked = settings.toolbar;
     fields.overlay.checked = settings.overlay;
     fields.focusMute.checked = settings.flashOnFocusMute;
@@ -147,7 +144,6 @@
   function startedMessage(settings) {
     const parts = [];
     if (settings.faviconFlash) parts.push('the tab icon');
-    if (settings.titleMarker) parts.push('the tab title');
     if (settings.overlay) parts.push('the page');
     if (settings.toolbar) parts.push('the toolbar icon');
     if (!parts.length) return 'Test flash started.';

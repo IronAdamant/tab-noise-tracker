@@ -20,7 +20,7 @@ function testSettings() {
   assert.strictEqual(defaults.intervalMs >= 1000, true, 'default pulse is at most one per second');
   assert.strictEqual(defaults.style, 'border');
   assert.strictEqual(defaults.faviconFlash, true);
-  assert.strictEqual(defaults.titleMarker, true);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(defaults, 'titleMarker'), false);
   assert.strictEqual(defaults.toolbar, true);
   assert.strictEqual(defaults.overlay, false);
   assert.strictEqual(Model.warningText(defaults), '');
@@ -34,7 +34,7 @@ function testSettings() {
   const migrated = Model.normalizeSettings({ overlay: true, titleMarker: false, toolbar: false });
   assert.strictEqual(migrated.overlay, true, 'stored overlay choice is kept');
   assert.strictEqual(migrated.faviconFlash, true, 'missing favicon switch uses the new default');
-  assert.strictEqual(migrated.titleMarker, false);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(migrated, 'titleMarker'), false);
   assert.strictEqual(migrated.toolbar, false);
 
   const clamped = Model.normalizeSettings({
@@ -51,7 +51,7 @@ function testSettings() {
   assert.strictEqual(clamped.style, 'border');
   assert.strictEqual(clamped.color, Model.DEFAULT_SETTINGS.color);
   assert.strictEqual(clamped.overlay, false);
-  assert.strictEqual(clamped.titleMarker, true);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(clamped, 'titleMarker'), false);
   assert.strictEqual(clamped.faviconFlash, true);
 
   const merged = Model.mergeSettings(clamped, { tabAlerts: true, intervalMs: 1490 });
@@ -61,18 +61,26 @@ function testSettings() {
   assert.strictEqual(merged.intervalMs, 1500);
 
   const kept = Model.mergeSettings(
-    { overlay: true, faviconFlash: false, titleMarker: false },
+    { overlay: true, faviconFlash: false, titleMarker: true },
     { intervalMs: 2000 }
   );
   assert.strictEqual(kept.overlay, true);
   assert.strictEqual(kept.faviconFlash, false);
-  assert.strictEqual(kept.titleMarker, false);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(kept, 'titleMarker'), false);
   assert.strictEqual(kept.toolbar, true);
   assert.strictEqual(kept.intervalMs, 2000);
   assert.strictEqual(Model.alertSurfaces(kept).page, true);
+  const legacyTitleOnly = Model.normalizeSettings({
+    titleMarker: true,
+    faviconFlash: false,
+    overlay: false,
+    toolbar: false
+  });
+  assert.strictEqual(Model.alertSurfaces(legacyTitleOnly).page, false);
+  assert.strictEqual(Model.alertSurfaces(legacyTitleOnly).any, false);
   assert.strictEqual(Model.alertSurfaces({
     faviconFlash: false,
-    titleMarker: false,
+    titleMarker: true,
     overlay: false,
     toolbar: false
   }).any, false);
@@ -142,6 +150,8 @@ function testFocusPlans() {
 
 function testRowsAndBadge() {
   assert.strictEqual(Model.stripMarker('🔊 🔈 Hello'), 'Hello');
+  const stacked = (Model.BRIGHT_PREFIX + Model.DIM_PREFIX).repeat(30) + 'Fubuki';
+  assert.strictEqual(Model.stripMarker(stacked), 'Fubuki');
   assert.strictEqual(Model.monogramFor('🔊 beta'), 'B');
 
   const now = 100000;

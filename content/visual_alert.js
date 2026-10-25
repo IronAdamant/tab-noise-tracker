@@ -1,8 +1,13 @@
-/* Tab-strip favicon pulse, title marker, and optional on-page flash.
-   Isolated world: it draws locally, restores the favicon and title, and does not read page content or touch audio. */
+/* Tab-strip favicon pulse and optional on-page flash.
+   Isolated world: it draws locally, restores the favicon, and does not read page content,
+   touch document.title, or touch audio. A second injection returns immediately so Focus
+   mode cannot stack another observer or timer on top of the one already running. */
 'use strict';
 
 (function () {
+  if (globalThis.__tabNoiseVisualLoaded) return;
+  globalThis.__tabNoiseVisualLoaded = true;
+
   const HOST_ID = 'tab-noise-tracker-alert';
   const FAVICON_WATCH = {
     subtree: true,
@@ -13,12 +18,8 @@
   let session = 0;
   let pulseTimer = null;
   let endTimer = null;
-  let observer = null;
   let host = null;
   let running = false;
-  let titleActive = false;
-  let originalTitle = '';
-  let expectedTitle = '';
   let faviconObserver = null;
   let faviconWatchRoot = null;
   let faviconActive = false;
@@ -61,39 +62,10 @@
     return '#FFFFFF';
   }
 
-  function restoreTitle() {
-    if (!titleActive) return;
-    titleActive = false;
-    expectedTitle = originalTitle;
-    try {
-      document.title = originalTitle;
-    } catch (error) {
-      // Some documents do not allow title changes.
-    }
-  }
-
-  function applyTitle(prefix) {
-    expectedTitle = prefix + originalTitle;
-    titleActive = true;
-    if (document.title !== expectedTitle) document.title = expectedTitle;
-  }
-
-  function watchTitle(token) {
-    const rootNode = document.head || document.documentElement;
-    if (!rootNode || typeof MutationObserver !== 'function') return;
-    observer = new MutationObserver(function () {
-      if (token !== session || !titleActive) return;
-      if (document.title === expectedTitle) return;
-      originalTitle = TabNoiseModel.stripMarker(document.title);
-      const prefix = expectedTitle.startsWith(TabNoiseModel.DIM_PREFIX)
-        ? TabNoiseModel.DIM_PREFIX
-        : TabNoiseModel.BRIGHT_PREFIX;
-      applyTitle(prefix);
-    });
-    observer.observe(rootNode, { subtree: true, childList: true, characterData: true });
-  }
-
   // Chrome will not restyle the tab strip. These icon links are the tab-level signal.
+  // The page title is never read or written: a title observer on <head> also saw every
+  // favicon rewrite, and Focus mode re-armed that observer often enough to prepend the
+  // speaker prefix again on each tick.
   function fillRoundRect(ctx, x, y, width, height, radius) {
     const r = Math.max(0, Math.min(radius, width / 2, height / 2));
     ctx.beginPath();
@@ -286,13 +258,14 @@
   function watchFavicon(token) {
     const root = document.head || document.documentElement;
     if (!root || typeof MutationObserver !== 'function') return;
+    if (faviconObserver) faviconObserver.disconnect();
     faviconObserver = new MutationObserver(function () {
       if (token !== session || !faviconActive) return;
       try {
         if (!faviconNeedsReassert()) return;
         paintFavicon(faviconBright);
       } catch (error) {
-        // Title and overlay keep their own timers. stop() still restores the icon.
+        // The overlay keeps its own timer. stop() still restores the icon.
       }
     });
     faviconWatchRoot = null;
@@ -446,13 +419,10 @@
     session += 1;
     clearTimers();
     faviconActive = false;
-    if (observer) observer.disconnect();
-    observer = null;
     disconnectFaviconWatch();
     if (host && host.parentNode) host.parentNode.removeChild(host);
     host = null;
     restoreFavicon();
-    restoreTitle();
     if (!silent && running) tell({ type: 'tn-flash-ended' });
     running = false;
   }
@@ -467,11 +437,6 @@
     const flashReason = reason || 'audible';
     let overlay = null;
     try {
-      originalTitle = TabNoiseModel.stripMarker(document.title || '');
-      if (settings.titleMarker) {
-        applyTitle(TabNoiseModel.BRIGHT_PREFIX);
-        watchTitle(token);
-      }
       if (settings.faviconFlash) beginFavicon(settings, token);
       if (settings.overlay) overlay = buildOverlay(settings, flashReason);
     } catch (error) {
@@ -482,15 +447,11 @@
     const paint = function (bright) {
       if (token !== session) return;
       if (overlay) overlay.paint(bright);
-      if (settings.titleMarker) {
-        applyTitle(bright ? TabNoiseModel.BRIGHT_PREFIX : TabNoiseModel.DIM_PREFIX);
-      }
       if (settings.faviconFlash) paintFavicon(bright);
     };
     const hold = function () {
       if (token !== session) return;
       if (overlay) overlay.paint(true);
-      if (settings.titleMarker) applyTitle(TabNoiseModel.BRIGHT_PREFIX);
       if (settings.faviconFlash) paintFavicon(true);
       if (settings.toolbar) tell({ type: 'tn-toolbar-hold' });
     };
@@ -543,25 +504,22 @@
 
   globalThis.TabNoiseVisual = { start: start, stop: stop };
 
-  if (!globalThis.__tabNoiseVisualLoaded) {
-    globalThis.__tabNoiseVisualLoaded = true;
-    const inExtensionPage = location.protocol === 'chrome-extension:';
-    chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-      if (!message) return;
-      if (inExtensionPage && message.target === 'extension-page' && message.type === 'tn-flash-stop') {
-        globalThis.TabNoiseVisual.stop(true);
-        sendResponse({ ok: true });
-        return;
-      }
-      if (message.target !== 'content') return;
-      if (message.type === 'tn-flash-start') {
-        sendResponse({ ok: !!globalThis.TabNoiseVisual.start(message.config, message.reason) });
-        return;
-      }
-      if (message.type === 'tn-flash-stop') {
-        globalThis.TabNoiseVisual.stop(true);
-        sendResponse({ ok: true });
-      }
-    });
-  }
+  const inExtensionPage = location.protocol === 'chrome-extension:';
+  chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    if (!message) return;
+    if (inExtensionPage && message.target === 'extension-page' && message.type === 'tn-flash-stop') {
+      globalThis.TabNoiseVisual.stop(true);
+      sendResponse({ ok: true });
+      return;
+    }
+    if (message.target !== 'content') return;
+    if (message.type === 'tn-flash-start') {
+      sendResponse({ ok: !!globalThis.TabNoiseVisual.start(message.config, message.reason) });
+      return;
+    }
+    if (message.type === 'tn-flash-stop') {
+      globalThis.TabNoiseVisual.stop(true);
+      sendResponse({ ok: true });
+    }
+  });
 })();

@@ -17,7 +17,6 @@
 
   const DEFAULT_SETTINGS = Object.freeze({
     faviconFlash: true,
-    titleMarker: true,
     toolbar: true,
     overlay: false,
     flashOnFocusMute: true,
@@ -76,7 +75,6 @@
       : DEFAULT_SETTINGS.style;
     return {
       faviconFlash: source.faviconFlash == null ? DEFAULT_SETTINGS.faviconFlash : !!source.faviconFlash,
-      titleMarker: source.titleMarker == null ? DEFAULT_SETTINGS.titleMarker : !!source.titleMarker,
       toolbar: source.toolbar == null ? DEFAULT_SETTINGS.toolbar : !!source.toolbar,
       overlay: source.overlay == null ? DEFAULT_SETTINGS.overlay : !!source.overlay,
       flashOnFocusMute: source.flashOnFocusMute == null
@@ -98,10 +96,9 @@
 
   function alertSurfaces(settings) {
     const safe = normalizeSettings(settings);
-    const page = safe.faviconFlash || safe.titleMarker || safe.overlay;
+    const page = safe.faviconFlash || safe.overlay;
     return {
       faviconFlash: safe.faviconFlash,
-      titleMarker: safe.titleMarker,
       overlay: safe.overlay,
       toolbar: safe.toolbar,
       page: page,
@@ -226,13 +223,13 @@
     return parts.join(' ');
   }
 
+  // Legacy alerts prefixed the title, and a Focus-mode loop stacked those prefixes
+  // without a useful cap. The popup still strips every leading marker so a tab that
+  // was polluted before this version shows its real name. Nothing writes them back.
   function stripMarker(title) {
     let value = typeof title === 'string' ? title : '';
-    for (let guard = 0; guard < 5; guard += 1) {
-      const prefix = value.startsWith(BRIGHT_PREFIX)
-        ? BRIGHT_PREFIX
-        : value.startsWith(DIM_PREFIX) ? DIM_PREFIX : '';
-      if (!prefix) break;
+    while (value.startsWith(BRIGHT_PREFIX) || value.startsWith(DIM_PREFIX)) {
+      const prefix = value.startsWith(BRIGHT_PREFIX) ? BRIGHT_PREFIX : DIM_PREFIX;
       value = value.slice(prefix.length);
     }
     return value;

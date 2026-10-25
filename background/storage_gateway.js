@@ -23,6 +23,7 @@
 
   // New installs get the current defaults. Saved switches stay as set.
   // A missing faviconFlash (older installs) turns on without clearing overlay.
+  // titleMarker is no longer a setting; a saved copy is dropped on the next write.
   async function ensureSettings() {
     const data = await chrome.storage.local.get('settings');
     const normalized = TabNoiseModel.normalizeSettings(data.settings);

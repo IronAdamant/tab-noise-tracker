@@ -50,16 +50,15 @@ Focus mode keeps a single listening tab unmuted and mutes every other tab.
 
 Visual flashing is a primary signal, not a decoration. When a tab becomes audible, the extension flashes so you can see the source without hearing it. The same flash runs when Focus mode mutes a tab that was producing sound, if that option is on.
 
-Chrome does not let an extension recolour the tab strip itself. The tab-level signal is the favicon and the title, which both show on the tab. The on-page overlay is an optional extra inside the page.
+Chrome does not let an extension recolour the tab strip itself. The tab-level signal is the favicon. The page title is not modified. The on-page overlay is an optional extra inside the page.
 
-New installs start with the favicon flash, title marker, and toolbar flash on, and the on-page overlay off. If you already saved settings, those switches stay as you set them. The favicon switch turns on if it was never saved.
+New installs start with the favicon flash and toolbar flash on, and the on-page overlay off. If you already saved settings, those switches stay as you set them. The favicon switch turns on if it was never saved. A saved title-marker switch is ignored and removed; the extension no longer prefixes the tab title.
 
-Four surfaces, each with its own switch:
+Three surfaces, each with its own switch:
 
 1. **Favicon flash (default on).** The noisy tab's icon is replaced by a mark drawn locally in your alert colour. It uses the same speed and pulse count as the rest of the alert: a solid rounded square, then a smaller dimmer one. When the alert ends, the original favicon links are put back with the same `rel` and `href`. If the page had no favicon, the injected icon is removed. If the page sets its own icon during the flash, that icon is kept for the restore and the pulse is drawn again so the page does not cover it. Reduced motion holds a steady coloured icon instead of blinking.
-2. **Tab title marker (default on).** The tab's title alternates between two speaker symbols. The original title is restored when the alert ends.
-3. **Toolbar flash (default on).** The extension icon swaps to the amber alert icon and the badge colour pulses.
-4. **On-page flash (default off).** A script can still draw a border, a colour wash, or a banner over the page. Turn it on in Visual alert settings if you want that extra overlay. A **Dismiss alert** button sits on the banner.
+2. **Toolbar flash (default on).** The extension icon swaps to the amber alert icon and the badge colour pulses.
+3. **On-page flash (default off).** A script can still draw a border, a colour wash, or a banner over the page. Turn it on in Visual alert settings if you want that extra overlay. A **Dismiss alert** button sits on the banner.
 
 The popup says which rows are flashing and offers **Jump to tab** and **Stop flash**.
 
@@ -68,22 +67,22 @@ Open **Visual alert settings** for:
 - Brightness, from subtle to strong. It strengthens the favicon pulse and the on-page overlay.
 - Colour, as presets or a colour picker. This is the favicon colour.
 - On-page style: border only, solid flash, or text that changes colour.
-- Time between pulses, and how many pulses run. The favicon, title, and on-page overlay share both.
+- Time between pulses, and how many pulses run. The favicon and the on-page overlay share both.
 - Continuous flashing until you dismiss it. A safety stop ends that mode after 6 hours.
-- Independent switches for the four surfaces, for "flash when Focus mode mutes a tab", and for silent OS notifications.
-- **Test flash**, which runs on the settings tab so you can judge the tab icon, title, colour, and speed, and also exercises the toolbar icon.
+- Independent switches for the three surfaces, for "flash when Focus mode mutes a tab", and for silent OS notifications.
+- **Test flash**, which runs on the settings tab so you can judge the tab icon, colour, and speed, and also exercises the toolbar icon.
 
 After a finite number of pulses, a steady highlight remains for about 12 seconds, including a steady coloured favicon. Dismiss it from the banner (when the on-page flash is on), the settings page, or the popup. If the sound stops, an alert that was only saying "this tab started" clears as well, and the original favicon comes back. A "Focus mode muted this tab" alert stays for its normal time so the silenced tab is still findable.
 
 **Safety.** The fastest setting is two pulses per second, which stays under the common guidance of three flashes per second. The default is slower: one pulse every 1.5 seconds, at 70% brightness, with the on-page overlay off. The page warns when you choose a faster speed, a very bright full-window flash, continuous flashing, or a saturated red. If the operating system asks for reduced motion, the alert is a steady highlight for about 12 seconds instead of a pulse, including a steady coloured favicon. Reduced motion wins over the continuous option. Reduced motion is checked on the page itself, and again whenever you open the popup or the settings.
 
-The flash script cannot run on browser pages such as `chrome://` settings, the Chrome Web Store, or other extensions, so those tabs cannot change their favicon, title, or overlay. They still show up in the popup, and the toolbar still changes. A discarded (asleep) tab is not woken just to draw a flash; open it and the flash is retried if it is still active.
+The flash script cannot run on browser pages such as `chrome://` settings, the Chrome Web Store, or other extensions, so those tabs cannot change their favicon or overlay. They still show up in the popup, and the toolbar still changes. A discarded (asleep) tab is not woken just to draw a flash; open it and the flash is retried if it is still active.
 
 ### Tab alerts
 
 This is the small sibling of Windows Sound Tracker's Window Alerts: one optional, silent operating-system notification when a tab starts making sound after being quiet. There are no per-app trigger levels. The switch is in the popup and in settings. It is off until you turn it on.
 
-A short cooldown (5 seconds) stops one tab from notifying and flashing again if Chrome's audible flag flickers. A Focus-mode mute flash, and the Test flash button, do not start that cooldown, so a real sound start still alerts. The notification has no sound. Choosing it focuses that tab. If you are already looking at the tab and the favicon flash, title marker, or on-page flash is on, the extra notification is skipped.
+A short cooldown (5 seconds) stops one tab from notifying and flashing again if Chrome's audible flag flickers. A Focus-mode mute flash, and the Test flash button, do not start that cooldown, so a real sound start still alerts. The notification has no sound. Choosing it focuses that tab. If you are already looking at the tab and the favicon flash or on-page flash is on, the extra notification is skipped.
 
 ## Install
 
@@ -108,7 +107,7 @@ To try a tone without leaving the machine, open `tests/fixture/sound.html` from 
 | `storage` | Save Focus mode, the mute snapshot taken when Focus mode starts, and visual-alert settings in `chrome.storage.local`. Short-lived flash state uses `chrome.storage.session` and is discarded when the browser closes. |
 | `notifications` | Optional silent visual notification when a tab starts making sound. No notification is shown unless you turn Tab alerts on. |
 | `scripting` | Inject the visual-alert script into a tab at the moment it needs to flash. The script is not loaded on every page at startup. |
-| Host access to `http://*/*` and `https://*/*` | The tab icon and the optional overlay have to be drawn inside the website that is making sound, which can be any site. The script draws a local favicon, can change that tab's title, and can draw an optional overlay. It does not read page content, does not touch the audio, and does not open a connection. |
+| Host access to `http://*/*` and `https://*/*` | The tab icon and the optional overlay have to be drawn inside the website that is making sound, which can be any site. The script draws a local favicon and can draw an optional overlay. It does not change the page title, does not read page content, does not touch the audio, and does not open a connection. |
 
 No other host permissions, no content script registered for every page, and no remote code.
 
@@ -120,17 +119,18 @@ Only metadata is used: which tab is producing sound, its title and window, and w
 
 Settings and the Focus snapshot stay in `chrome.storage.local` on this device. Letter marks in the popup are drawn locally. Remote favicons are not loaded, so showing the list cannot trigger a network request.
 
-The injected script runs in an isolated world. It swaps the favicon for an icon drawn locally, can prefix `document.title`, and can draw an optional overlay. It puts the previous favicon link and the title back when the alert ends. It does not read the page body, does not fetch the favicon, and does not keep a copy of it.
+The injected script runs in an isolated world. It swaps the favicon for an icon drawn locally and can draw an optional overlay. It puts the previous favicon link back when the alert ends. It does not write `document.title`, does not read the page body, does not fetch the favicon, and does not keep a copy of it. Injecting the script again is a no-op, so Focus mode cannot stack a second favicon observer.
 
 ## Check the logic locally
 
 ```bash
 node tests/logic_test.js
 node tests/favicon_dom_test.js
+node tests/focus_leak_test.js
 python3 tools/draw_icons.py   # redraws the original icons; not required to run the extension
 ```
 
-Those checks cover settings limits (including the favicon-flash default and older saved settings), contrast of the badge and colour presets, Focus mute/restore plans, favicon restore planning, and how rows are sorted and labelled. `favicon_dom_test.js` loads the real content script against a tiny local stand-in for the page and checks that the pulsing icon is removed and the original favicon links come back. They do not start Chrome.
+Those checks cover settings limits (including the favicon-flash default and older saved settings), contrast of the badge and colour presets, Focus mute/restore plans, favicon restore planning, and how rows are sorted and labelled. `favicon_dom_test.js` loads the real content script against a tiny local stand-in for the page and checks that the pulsing icon is removed and the original favicon links come back. `focus_leak_test.js` turns Focus mode on and off and re-runs the alert, and checks that the page title stays unchanged and that listeners, observers, and timers do not grow. They do not start Chrome.
 
 ## Trying it in Chrome
 
@@ -138,7 +138,7 @@ Those checks cover settings limits (including the favicon-flash default and olde
 2. Open two windows and play audio in one tab. The badge count should rise, and the popup should name the tab and the window.
 3. Mute, unmute, jump, and close from the popup. Mute from Chrome's own tab control too, with Focus mode on, and confirm sound follows an unmute.
 4. Turn Focus mode on. Only the active tab should stay unmuted. Switch tabs and confirm the previous noisy tab is muted and flashes. Start audio in a background tab and confirm sound moves there. Turn Focus mode off and confirm the earlier mute states return. Restart Chrome and confirm Focus mode is still on.
-5. Open `tests/fixture/sound.html` from a local web server (not `file://`). Play the tone. The tab's favicon should blink in the colour chosen in settings, and the title should pulse. No border or wash should appear on the page unless you turn the on-page flash back on. Stop the tone and confirm the blue fixture icon returns.
+5. Open `tests/fixture/sound.html` from a local web server (not `file://`). Play the tone. The tab's favicon should blink in the colour chosen in settings. The page title should stay exactly as it was. No border or wash should appear on the page unless you turn the on-page flash back on. Stop the tone and confirm the blue fixture icon returns.
 6. Open Visual alert settings. Use Test flash and watch this tab's icon. Turn the on-page flash on and try border, solid, and text styles. Move brightness and speed and confirm the warning appears for fast, very bright, continuous, or saturated-red choices. Turn each surface off and on. Set the OS to reduce motion and confirm the test is a steady highlight, including a steady coloured favicon.
 7. Turn on Tab alerts, start audio in a background tab, and confirm a silent notification. Click it and confirm the tab is focused.
 8. Open `chrome://extensions` (or any `chrome://` page) and confirm the popup explains that the page itself cannot change its favicon or show an overlay.
@@ -147,9 +147,9 @@ Those checks cover settings limits (including the favicon-flash default and olde
 ## Limits
 
 - Loudness is not available. The bars are an activity mark, not a meter.
-- `chrome://` pages, the Chrome Web Store, PDF viewer pages, and other extensions cannot host the favicon swap, the title marker, or the overlay.
+- `chrome://` pages, the Chrome Web Store, PDF viewer pages, and other extensions cannot host the favicon swap or the overlay.
 - A discarded tab is not reloaded just to draw a flash.
-- The toolbar animation is driven by the page while a favicon, title, or overlay flash runs. If Chrome stops the extension worker, a toolbar-only pulse can pause; the badge then holds the alert colour until the alert ends. The favicon and on-page flash keep their own timer inside the tab.
+- The toolbar animation is driven by the page while a favicon or overlay flash runs. If Chrome stops the extension worker, a toolbar-only pulse can pause; the badge then holds the alert colour until the alert ends. The favicon and on-page flash keep their own timer inside the tab.
 - Focus mode is one listening tab for the whole browser, not one per window.
 - Turning Focus mode off restores the snapshot from when it was turned on.
 - Incognito tabs are visible only after you allow the extension in Incognito.
@@ -166,13 +166,14 @@ background/focus_controller.js
 background/signal_controller.js
 popup.html / popup.js / popup.css
 options.html / options.js / options.css
-content/visual_alert.js       injected only when a tab should flash its icon, title, or overlay
+content/visual_alert.js       injected only when a tab should flash its icon or overlay
 shared/tracker_model.js       settings, Focus plans, row text
 shared/extension.css
 icons/                        original 16/32/48/128 icons, plus alert variants
 tools/draw_icons.py
 tests/logic_test.js
 tests/favicon_dom_test.js
+tests/focus_leak_test.js
 tests/fixture/sound.html
 ```
 
