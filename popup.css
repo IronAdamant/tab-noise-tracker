@@ -1,0 +1,211 @@
+@import url("shared/extension.css");
+
+body {
+  width: 28rem;
+  padding: 16px;
+}
+
+header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+header img { width: 40px; height: 40px; flex: 0 0 auto; }
+
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+#summary {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.panel {
+  background: var(--bg-elev);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+.focus-panel { margin-bottom: 12px; }
+
+#focus-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  border-width: 2px;
+}
+
+.switch-name { display: block; font-weight: 700; }
+
+.switch-state { color: var(--muted); font-size: 0.95rem; }
+
+.switch-ui {
+  width: 52px;
+  height: 32px;
+  border-radius: 999px;
+  background: #4a463f;
+  border: 2px solid #1b1a17;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.switch-ui::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fffdf8;
+}
+
+#focus-toggle[aria-checked="true"] .switch-ui {
+  background: var(--amber);
+}
+
+#focus-toggle[aria-checked="true"] .switch-ui::after {
+  left: 22px;
+  background: var(--amber-ink);
+}
+
+#focus-help,
+#shortcut,
+.quiet-note {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+#tab-list {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  max-height: 24rem;
+  overflow: auto;
+}
+
+.tab-row {
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-elev);
+  padding: 12px;
+  margin: 0 0 10px;
+}
+
+.tab-row.is-flashing {
+  border-color: var(--amber);
+  box-shadow: inset 4px 0 0 var(--amber);
+}
+
+.identity {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.title {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.meta,
+.status { margin: 2px 0 0; }
+
+.status { color: var(--playing); font-weight: 650; }
+
+.page-note { margin: 6px 0 0; }
+
+.meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 14px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.meter span {
+  display: block;
+  width: 4px;
+  height: 40%;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.meter span:nth-child(2) { animation-delay: 0.15s; height: 70%; }
+.meter span:nth-child(3) { animation-delay: 0.3s; height: 100%; }
+
+@keyframes pulse {
+  0%, 100% { transform: scaleY(0.45); }
+  50% { transform: scaleY(1); }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.actions button { flex: 1 1 8rem; }
+
+footer {
+  display: grid;
+  gap: 10px;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.check input { width: 1.25rem; height: 1.25rem; margin-top: 0.2rem; }
+
+#error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meter span { animation: none; height: 70%; }
+  .switch-ui::after { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .switch-ui { background: ButtonFace; forced-color-adjust: none; }
+  #focus-toggle[aria-checked="true"] .switch-ui::after { background: ButtonText; }
+  .tab-row.is-flashing { border-color: Highlight; box-shadow: none; }
+  .mark { background: ButtonText !important; color: ButtonFace; }
+}

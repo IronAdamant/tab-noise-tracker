@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Tab Noise Tracker",
+  "short_name": "Tab Noise",
+  "version": "1.0.0",
+  "minimum_chrome_version": "114",
+  "description": "Find which tab is making sound, mute or focus it, and flash a visual alert. Everything stays on this device.",
+  "homepage_url": "https://github.com/IronAdamant/tab-noise-tracker",
+  "incognito": "spanning",
+  "permissions": ["tabs", "storage", "notifications", "scripting"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Tab Noise Tracker",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "commands": {
+    "toggle-focus": {
+      "suggested_key": {
+        "default": "Alt+Shift+F",
+        "mac": "MacCtrl+Shift+F"
+      },
+      "description": "Toggle Focus mode"
+    }
+  }
+}

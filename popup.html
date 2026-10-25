@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Tab Noise Tracker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/icon32.png" width="40" height="40" alt="">
+    <div>
+      <h1>Tab Noise Tracker</h1>
+      <p id="summary" aria-live="polite">Checking open tabs…</p>
+    </div>
+  </header>
+
+  <section class="panel focus-panel" aria-labelledby="focus-heading">
+    <h2 id="focus-heading" class="visually-hidden">Focus mode</h2>
+    <button id="focus-toggle" type="button" role="switch" aria-checked="false" aria-describedby="focus-help">
+      <span class="switch-text">
+        <span class="switch-name">Focus mode</span>
+        <span class="switch-state" id="focus-state">Off</span>
+      </span>
+      <span class="switch-ui" aria-hidden="true"></span>
+    </button>
+    <p id="focus-help">Only one tab stays unmuted: the tab you are on. Sound moves when you switch tabs, or when another tab starts playing. Turning this off restores the mute state from when you turned it on.</p>
+    <p id="shortcut">You can set a keyboard shortcut at chrome://extensions/shortcuts.</p>
+  </section>
+
+  <section aria-labelledby="list-heading">
+    <h2 id="list-heading" class="visually-hidden">Tabs making sound</h2>
+    <ul id="tab-list"></ul>
+    <p id="empty" class="panel" hidden>All quiet. When a tab plays sound, its name and window show up here. You can mute it, jump to it, or close it.</p>
+  </section>
+
+  <footer>
+    <button id="open-options" class="primary" type="button">Visual alert settings</button>
+    <label class="check" for="tab-alerts">
+      <input id="tab-alerts" type="checkbox">
+      <span>Show a silent notification when a tab starts making sound.</span>
+    </label>
+    <p class="quiet-note">Nothing leaves this browser. The moving bars mean “playing”, not a loudness meter.</p>
+  </footer>
+  <p id="error" role="alert" hidden></p>
+
+  <script src="shared/tracker_model.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
