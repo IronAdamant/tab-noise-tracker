@@ -84,7 +84,7 @@
   }
 
   function runLocalToolbar(tabId, settings, reduced) {
-    if (!settings.toolbar) return;
+    if (!TabNoiseModel.alertSurfaces(settings).toolbar) return;
     localToolbarTabs.add(tabId);
     if (reduced) {
       paintToolbar('alert', settings);
@@ -228,6 +228,8 @@
       options && options.settings ? options.settings : await TN.getSettings()
     );
     if (reason === 'focus-mute' && !settings.flashOnFocusMute) return false;
+    // visualAlerts off makes alertSurfaces() empty, so audible and Focus-mute
+    // flashes return here. No favicon script is injected and the toolbar stays still.
     if (!TabNoiseModel.alertSurfaces(settings).any) return false;
 
     const now = Date.now();
@@ -261,7 +263,7 @@
     if (!pageDriven && reason !== 'test') {
       drove = await tryPageFlash(tab, settings, reason);
     }
-    if (!drove && settings.toolbar) runLocalToolbar(tabId, settings, reduced);
+    if (!drove && TabNoiseModel.alertSurfaces(settings).toolbar) runLocalToolbar(tabId, settings, reduced);
     scheduleEnd(tabId, runtime.flashing[key].until - Date.now());
     await refreshBadge();
     return true;
@@ -391,8 +393,18 @@
     await clearNotification(tabId);
   }
 
+  async function stopAllFlashes() {
+    const runtime = await TN.getRuntime();
+    const ids = Object.keys(runtime.flashing);
+    for (let index = 0; index < ids.length; index += 1) {
+      await clearFlash(Number(ids[index]), { tellPage: true });
+    }
+  }
+
+  // Test flash is a manual preview. It ignores the master switch and still
+  // follows the favicon, toolbar, and overlay switches.
   async function beginTestFlash(tabId, rawSettings, pageDriven) {
-    const settings = TabNoiseModel.normalizeSettings(rawSettings);
+    const settings = TabNoiseModel.mergeSettings(rawSettings, { visualAlerts: true });
     if (!TabNoiseModel.alertSurfaces(settings).any) {
       return { ok: false, error: 'Turn on at least one alert surface first.' };
     }
@@ -420,4 +432,5 @@
   TN.notifyAudible = notifyAudible;
   TN.openNotifiedTab = openNotifiedTab;
   TN.beginTestFlash = beginTestFlash;
+  TN.stopAllFlashes = stopAllFlashes;
 })();

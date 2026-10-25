@@ -292,6 +292,7 @@ const chrome = {
     onClicked: { addListener: function () {} }
   },
   storage: {
+    onChanged: { addListener: function () {} },
     local: {
       get: function (keys) {
         noteCall();

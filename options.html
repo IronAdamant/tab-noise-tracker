@@ -9,10 +9,16 @@
   <a class="skip" href="#main">Skip to settings</a>
   <main id="main">
     <h1>Visual alert settings</h1>
-    <p class="lede">When a tab starts making sound, its favicon flashes in the tab strip, and the toolbar icon can flash too. The page title stays as the site wrote it. The on-page overlay is off unless you turn it on. The default speed is one pulse every 1.5 seconds. Settings save on this device.</p>
+    <p class="lede">When a tab starts making sound, its favicon flashes in the tab strip, and the toolbar icon can flash too. The page title stays as the site wrote it. The on-page overlay is off unless you turn it on. The default speed is one pulse every 1.5 seconds. Settings save on this device. Visual alerts start on. Turn them off to keep the tab list and Focus mode without flashing.</p>
     <p id="motion" role="status"></p>
 
     <fieldset>
+      <legend>Visual alerts</legend>
+      <label class="check" for="visual-alerts"><input id="visual-alerts" type="checkbox" checked> <span>Visual alerts. Flash the tab that's making sound.</span></label>
+      <p id="master-note"></p>
+    </fieldset>
+
+    <fieldset id="surfaces">
       <legend>Where the alert appears</legend>
       <label class="check"><input id="favicon-flash" type="checkbox" checked> <span>Favicon flash. The tab icon pulses in your alert colour. This is the only tab-strip signal.</span></label>
       <label class="check"><input id="toolbar" type="checkbox" checked> <span>Toolbar flash. The extension icon and badge change colour.</span></label>

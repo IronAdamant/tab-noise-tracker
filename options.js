@@ -3,6 +3,7 @@
 
 (function () {
   const fields = {
+    visualAlerts: document.getElementById('visual-alerts'),
     faviconFlash: document.getElementById('favicon-flash'),
     toolbar: document.getElementById('toolbar'),
     overlay: document.getElementById('overlay'),
@@ -40,6 +41,7 @@
 
   function readForm() {
     return TabNoiseModel.normalizeSettings({
+      visualAlerts: fields.visualAlerts.checked,
       faviconFlash: fields.faviconFlash.checked,
       toolbar: fields.toolbar.checked,
       overlay: fields.overlay.checked,
@@ -60,8 +62,20 @@
     });
   }
 
+  function applyAlertAvailability(settings) {
+    const on = !!settings.visualAlerts;
+    document.getElementById('surfaces').disabled = !on;
+    fields.focusMute.disabled = !on;
+    const note = document.getElementById('master-note');
+    const text = on
+      ? ''
+      : 'Favicon, toolbar, on-page, and Focus-mute flash stay saved, but no automatic flash runs while visual alerts are off. Test flash still previews them. Tab alerts are separate.';
+    if (note.textContent !== text) note.textContent = text;
+  }
+
   function fillForm(settings) {
     current = settings;
+    fields.visualAlerts.checked = settings.visualAlerts;
     fields.faviconFlash.checked = settings.faviconFlash;
     fields.toolbar.checked = settings.toolbar;
     fields.overlay.checked = settings.overlay;
@@ -82,6 +96,7 @@
     paintSwatches(settings.color);
     const text = TabNoiseModel.warningText(settings);
     if (warning.textContent !== text) warning.textContent = text;
+    applyAlertAvailability(settings);
   }
 
   function scheduleSave() {
@@ -93,6 +108,7 @@
     paintSwatches(current.color);
     const text = TabNoiseModel.warningText(current);
     if (warning.textContent !== text) warning.textContent = text;
+    applyAlertAvailability(current);
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(function () { saveNow(); }, 150);
   }
@@ -141,6 +157,10 @@
     input.addEventListener('change', scheduleSave);
   });
 
+  function previewNote(saved) {
+    return saved.visualAlerts ? '' : ' This was a preview. Automatic alerts stay off.';
+  }
+
   function startedMessage(settings) {
     const parts = [];
     if (settings.faviconFlash) parts.push('the tab icon');
@@ -153,7 +173,8 @@
   }
 
   document.getElementById('test-flash').addEventListener('click', async function () {
-    const settings = await saveNow();
+    const saved = await saveNow();
+    const settings = TabNoiseModel.mergeSettings(saved, { visualAlerts: true });
     testStatus.textContent = '';
     const surfaces = TabNoiseModel.alertSurfaces(settings);
     if (!surfaces.any) {
@@ -185,7 +206,7 @@
           pageDriven: false,
           settings: settings
         });
-        testStatus.textContent = 'The tab flash could not start. The toolbar will still change.';
+        testStatus.textContent = 'The tab flash could not start. The toolbar will still change.' + previewNote(saved);
         return;
       }
       if (!drew) {
@@ -194,7 +215,7 @@
         return;
       }
     }
-    testStatus.textContent = startedMessage(settings);
+    testStatus.textContent = startedMessage(settings) + previewNote(saved);
   });
 
   document.getElementById('stop-flash').addEventListener('click', async function () {

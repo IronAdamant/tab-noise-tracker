@@ -19,6 +19,7 @@ function testSettings() {
   assert.deepStrictEqual(defaults, Model.DEFAULT_SETTINGS);
   assert.strictEqual(defaults.intervalMs >= 1000, true, 'default pulse is at most one per second');
   assert.strictEqual(defaults.style, 'border');
+  assert.strictEqual(defaults.visualAlerts, true);
   assert.strictEqual(defaults.faviconFlash, true);
   assert.strictEqual(Object.prototype.hasOwnProperty.call(defaults, 'titleMarker'), false);
   assert.strictEqual(defaults.toolbar, true);
@@ -28,11 +29,13 @@ function testSettings() {
   assert.strictEqual(Model.alertSurfaces(null).any, true);
 
   const fresh = Model.normalizeSettings({});
+  assert.strictEqual(fresh.visualAlerts, true);
   assert.strictEqual(fresh.faviconFlash, true);
   assert.strictEqual(fresh.overlay, false);
 
   const migrated = Model.normalizeSettings({ overlay: true, titleMarker: false, toolbar: false });
   assert.strictEqual(migrated.overlay, true, 'stored overlay choice is kept');
+  assert.strictEqual(migrated.visualAlerts, true, 'missing visual alerts switch uses the new default');
   assert.strictEqual(migrated.faviconFlash, true, 'missing favicon switch uses the new default');
   assert.strictEqual(Object.prototype.hasOwnProperty.call(migrated, 'titleMarker'), false);
   assert.strictEqual(migrated.toolbar, false);
@@ -84,6 +87,36 @@ function testSettings() {
     overlay: false,
     toolbar: false
   }).any, false);
+
+  const alertsOff = Model.normalizeSettings({
+    visualAlerts: false,
+    faviconFlash: true,
+    toolbar: true,
+    overlay: true,
+    flashOnFocusMute: true
+  });
+  assert.strictEqual(alertsOff.visualAlerts, false, 'saved visual alerts choice is kept');
+  assert.strictEqual(alertsOff.faviconFlash, true);
+  assert.strictEqual(alertsOff.toolbar, true);
+  assert.strictEqual(alertsOff.overlay, true);
+  assert.strictEqual(alertsOff.flashOnFocusMute, true);
+  assert.deepStrictEqual(Model.alertSurfaces(alertsOff), {
+    faviconFlash: false,
+    overlay: false,
+    toolbar: false,
+    page: false,
+    any: false
+  });
+  const alertsOn = Model.mergeSettings(alertsOff, { visualAlerts: true });
+  assert.strictEqual(alertsOn.faviconFlash, true);
+  assert.strictEqual(Model.alertSurfaces(alertsOn).page, true);
+  assert.strictEqual(Model.alertSurfaces(alertsOn).toolbar, true);
+  assert.strictEqual(Model.alertSurfaces(alertsOn).any, true);
+  const keptOff = Model.mergeSettings(alertsOff, { intervalMs: 2000 });
+  assert.strictEqual(keptOff.visualAlerts, false);
+  assert.strictEqual(keptOff.faviconFlash, true);
+  assert.strictEqual(keptOff.intervalMs, 2000);
+  assert.strictEqual(Model.alertSurfaces(keptOff).any, false);
 
   assert.strictEqual(Model.warningReasons({
     style: 'solid',

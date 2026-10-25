@@ -119,3 +119,16 @@ input[type="range"] {
 #motion { font-weight: 650; }
 
 #surface-note { margin: 0 0 4px 1.9rem; }
+
+#surfaces:disabled {
+  opacity: 0.62;
+}
+
+#master-note:empty { margin: 0; }
+
+#master-note:not(:empty) {
+  margin: 8px 0 0;
+  font-weight: 650;
+}
+
+#focus-mute:disabled + span { color: var(--muted); }
