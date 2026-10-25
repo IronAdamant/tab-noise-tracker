@@ -12,9 +12,9 @@ The extension is local. It is plain HTML, CSS, and JavaScript. There is no build
 
 The extension detecting several noisy tabs, flashing their favicons orange, and jumping to one from the popup:
 
-![Tab Noise Tracker demo](docs/demo.gif)
+![Tab Noise Tracker demo](DEMO/demo.gif)
 
-[Watch the full-quality version (MP4)](https://github.com/IronAdamant/tab-noise-tracker/releases/download/v1.0.3/tab-noise-tracker-demo.mp4)
+[Watch the full-quality version (MP4)](DEMO/demo.mp4)
 
 ## What it does
 
