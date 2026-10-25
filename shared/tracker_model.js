@@ -1,4 +1,4 @@
-/* Pure decisions for Tab Noise Tracker: settings, Focus mute plans, and popup rows. */
+/* Pure decisions for Tab Noise Tracker: settings, Focus mute plans, favicon restore, and popup rows. */
 'use strict';
 
 (function (root, factory) {
@@ -16,9 +16,10 @@
   const SILENCE_LIST_MS = 20000;
 
   const DEFAULT_SETTINGS = Object.freeze({
-    overlay: true,
+    faviconFlash: true,
     titleMarker: true,
     toolbar: true,
+    overlay: false,
     flashOnFocusMute: true,
     tabAlerts: false,
     intensity: 70,
@@ -74,9 +75,10 @@
       ? source.style
       : DEFAULT_SETTINGS.style;
     return {
-      overlay: source.overlay == null ? DEFAULT_SETTINGS.overlay : !!source.overlay,
+      faviconFlash: source.faviconFlash == null ? DEFAULT_SETTINGS.faviconFlash : !!source.faviconFlash,
       titleMarker: source.titleMarker == null ? DEFAULT_SETTINGS.titleMarker : !!source.titleMarker,
       toolbar: source.toolbar == null ? DEFAULT_SETTINGS.toolbar : !!source.toolbar,
+      overlay: source.overlay == null ? DEFAULT_SETTINGS.overlay : !!source.overlay,
       flashOnFocusMute: source.flashOnFocusMute == null
         ? DEFAULT_SETTINGS.flashOnFocusMute
         : !!source.flashOnFocusMute,
@@ -92,6 +94,68 @@
 
   function mergeSettings(current, partial) {
     return normalizeSettings(Object.assign({}, current || {}, partial || {}));
+  }
+
+  function alertSurfaces(settings) {
+    const safe = normalizeSettings(settings);
+    const page = safe.faviconFlash || safe.titleMarker || safe.overlay;
+    return {
+      faviconFlash: safe.faviconFlash,
+      titleMarker: safe.titleMarker,
+      overlay: safe.overlay,
+      toolbar: safe.toolbar,
+      page: page,
+      any: page || safe.toolbar
+    };
+  }
+
+  function isFaviconRel(rel) {
+    if (typeof rel !== 'string') return false;
+    const tokens = rel.toLowerCase().trim().split(/\s+/);
+    return tokens.indexOf('icon') !== -1 ||
+      tokens.indexOf('apple-touch-icon') !== -1 ||
+      tokens.indexOf('apple-touch-icon-precomposed') !== -1;
+  }
+
+  function isSafeAttrName(name) {
+    return /^[A-Za-z_:][-A-Za-z0-9_:.]*$/.test(name);
+  }
+
+  function faviconRecord(attrs) {
+    if (!attrs || typeof attrs !== 'object') return null;
+    const rel = typeof attrs.rel === 'string' ? attrs.rel : '';
+    if (!isFaviconRel(rel)) return null;
+    const record = {};
+    Object.keys(attrs).forEach(function (key) {
+      if (key === 'data-tn-favicon' || !isSafeAttrName(key)) return;
+      if (typeof attrs[key] === 'string') record[key] = attrs[key];
+    });
+    return record;
+  }
+
+  function faviconRecords(list) {
+    const records = [];
+    (Array.isArray(list) ? list : []).forEach(function (item) {
+      const record = faviconRecord(item);
+      if (record) records.push(record);
+    });
+    return records;
+  }
+
+  // Live page icons win. An empty live set keeps the snapshot taken before the pulse.
+  function preferLiveFavicons(snapshot, liveRecords) {
+    const live = faviconRecords(liveRecords);
+    if (live.length) return live;
+    return faviconRecords(snapshot);
+  }
+
+  // If the page currently has its own icon links, leave those nodes in place.
+  // Otherwise recreate the saved rel/href set. An empty recreate list means
+  // the page had no favicon, so the injected icon is simply removed.
+  function planFaviconRestore(snapshot, liveRecords) {
+    const live = faviconRecords(liveRecords);
+    if (live.length) return { leaveLive: true, recreate: [] };
+    return { leaveLive: false, recreate: faviconRecords(snapshot) };
   }
 
   function hexToRgb(hex) {
@@ -133,7 +197,7 @@
   function warningReasons(settings) {
     const safe = normalizeSettings(settings);
     const speedRisk = safe.intervalMs < 1000;
-    const solidRisk = safe.style === 'solid' && safe.intensity >= 75;
+    const solidRisk = safe.overlay && safe.style === 'solid' && safe.intensity >= 75;
     const brightnessRisk = safe.intensity >= 90;
     const continuousRisk = safe.continuous;
     const redRisk = isSaturatedRed(safe.color);
@@ -158,7 +222,7 @@
     if (reasons.brightnessRisk) parts.push('Brightness is near the maximum.');
     if (reasons.continuousRisk) parts.push('Continuous flashing keeps going until you dismiss it.');
     if (reasons.redRisk) parts.push('Saturated red is harder on the eyes than amber or blue.');
-    parts.push('A slower border pulse is the safer choice.');
+    parts.push('A slower pulse is the safer choice.');
     return parts.join(' ');
   }
 
@@ -341,9 +405,9 @@
   }
 
   function pageNoteFor(code) {
-    if (code === 'asleep') return 'This tab is asleep, so the page itself cannot flash until you open it.';
-    if (code === 'browser') return 'This page cannot show an overlay. The toolbar still alerts you.';
-    if (code === 'failed') return 'The page flash did not start. The toolbar still alerts you.';
+    if (code === 'asleep') return 'This tab is asleep, so its favicon cannot flash until you open it.';
+    if (code === 'browser') return 'This page cannot change its favicon or show an overlay. The toolbar still alerts you.';
+    if (code === 'failed') return 'The tab-strip flash did not start. The toolbar still alerts you.';
     return '';
   }
 
@@ -436,6 +500,11 @@
     BADGE_COLORS: BADGE_COLORS,
     normalizeSettings: normalizeSettings,
     mergeSettings: mergeSettings,
+    alertSurfaces: alertSurfaces,
+    isFaviconRel: isFaviconRel,
+    faviconRecord: faviconRecord,
+    preferLiveFavicons: preferLiveFavicons,
+    planFaviconRestore: planFaviconRestore,
     hexToRgb: hexToRgb,
     relativeLuminance: relativeLuminance,
     contrastRatio: contrastRatio,

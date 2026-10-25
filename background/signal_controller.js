@@ -1,4 +1,4 @@
-/* Badge, toolbar flash, on-page flash injection, and silent tab notifications. */
+/* Badge, toolbar flash, tab-strip flash injection, and silent tab notifications. */
 'use strict';
 
 (function () {
@@ -133,7 +133,7 @@
   }
 
   async function tryPageFlash(tab, settings, reason) {
-    if (!settings.overlay && !settings.titleMarker) return false;
+    if (!TabNoiseModel.alertSurfaces(settings).page) return false;
     const kind = classifyPage(tab);
     if (kind !== 'web') {
       await markUnsupported(tab.id, kind === 'asleep' ? 'asleep' : 'browser');
@@ -228,7 +228,7 @@
       options && options.settings ? options.settings : await TN.getSettings()
     );
     if (reason === 'focus-mute' && !settings.flashOnFocusMute) return false;
-    if (!settings.overlay && !settings.titleMarker && !settings.toolbar) return false;
+    if (!TabNoiseModel.alertSurfaces(settings).any) return false;
 
     const now = Date.now();
     const runtime = await TN.getRuntime();
@@ -357,7 +357,7 @@
     try {
       const activeTabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
       const active = activeTabs[0];
-      if (active && active.id === tab.id && (settings.overlay || settings.titleMarker)) return;
+      if (active && active.id === tab.id && TabNoiseModel.alertSurfaces(settings).page) return;
     } catch (error) {
       // Still try to show the notification.
     }
@@ -393,7 +393,7 @@
 
   async function beginTestFlash(tabId, rawSettings, pageDriven) {
     const settings = TabNoiseModel.normalizeSettings(rawSettings);
-    if (!settings.overlay && !settings.titleMarker && !settings.toolbar) {
+    if (!TabNoiseModel.alertSurfaces(settings).any) {
       return { ok: false, error: 'Turn on at least one alert surface first.' };
     }
     const started = await startFlash(tabId, 'test', {

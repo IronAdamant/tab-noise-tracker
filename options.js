@@ -3,9 +3,10 @@
 
 (function () {
   const fields = {
-    overlay: document.getElementById('overlay'),
+    faviconFlash: document.getElementById('favicon-flash'),
     titleMarker: document.getElementById('title-marker'),
     toolbar: document.getElementById('toolbar'),
+    overlay: document.getElementById('overlay'),
     focusMute: document.getElementById('focus-mute'),
     tabAlerts: document.getElementById('tab-alerts'),
     continuous: document.getElementById('continuous'),
@@ -40,9 +41,10 @@
 
   function readForm() {
     return TabNoiseModel.normalizeSettings({
-      overlay: fields.overlay.checked,
+      faviconFlash: fields.faviconFlash.checked,
       titleMarker: fields.titleMarker.checked,
       toolbar: fields.toolbar.checked,
+      overlay: fields.overlay.checked,
       flashOnFocusMute: fields.focusMute.checked,
       tabAlerts: fields.tabAlerts.checked,
       continuous: fields.continuous.checked,
@@ -62,9 +64,10 @@
 
   function fillForm(settings) {
     current = settings;
-    fields.overlay.checked = settings.overlay;
+    fields.faviconFlash.checked = settings.faviconFlash;
     fields.titleMarker.checked = settings.titleMarker;
     fields.toolbar.checked = settings.toolbar;
+    fields.overlay.checked = settings.overlay;
     fields.focusMute.checked = settings.flashOnFocusMute;
     fields.tabAlerts.checked = settings.tabAlerts;
     fields.continuous.checked = settings.continuous;
@@ -141,10 +144,23 @@
     input.addEventListener('change', scheduleSave);
   });
 
+  function startedMessage(settings) {
+    const parts = [];
+    if (settings.faviconFlash) parts.push('the tab icon');
+    if (settings.titleMarker) parts.push('the tab title');
+    if (settings.overlay) parts.push('the page');
+    if (settings.toolbar) parts.push('the toolbar icon');
+    if (!parts.length) return 'Test flash started.';
+    if (parts.length === 1) return 'Test flash started. Look at ' + parts[0] + '.';
+    const last = parts[parts.length - 1];
+    return 'Test flash started. Look at ' + parts.slice(0, -1).join(', ') + ' and ' + last + '.';
+  }
+
   document.getElementById('test-flash').addEventListener('click', async function () {
     const settings = await saveNow();
     testStatus.textContent = '';
-    if (!settings.overlay && !settings.titleMarker && !settings.toolbar) {
+    const surfaces = TabNoiseModel.alertSurfaces(settings);
+    if (!surfaces.any) {
       testStatus.textContent = 'Turn on at least one alert surface first.';
       return;
     }
@@ -153,7 +169,7 @@
       testStatus.textContent = 'This settings tab could not be found.';
       return;
     }
-    const wantsPage = settings.overlay || settings.titleMarker;
+    const wantsPage = surfaces.page;
     let response = await chrome.runtime.sendMessage({
       type: 'tn-test-flash',
       tabId: tab.id,
@@ -173,7 +189,7 @@
           pageDriven: false,
           settings: settings
         });
-        testStatus.textContent = 'The page flash could not start. The toolbar will still change.';
+        testStatus.textContent = 'The tab flash could not start. The toolbar will still change.';
         return;
       }
       if (!drew) {
@@ -182,7 +198,7 @@
         return;
       }
     }
-    testStatus.textContent = 'Test flash started. Look at this tab and the toolbar icon.';
+    testStatus.textContent = startedMessage(settings);
   });
 
   document.getElementById('stop-flash').addEventListener('click', async function () {
