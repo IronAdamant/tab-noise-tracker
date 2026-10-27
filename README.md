@@ -1,6 +1,10 @@
 # Tab Noise Tracker
 
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/kobbcpmekekmdpjichchfnicgbbbphmg?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/tab-noise-tracker/kobbcpmekekmdpjichchfnicgbbbphmg)
+
 A Chrome extension that shows which **tab** is making sound, lets you mute or close it, and flashes a visual alert you can see without hearing anything.
+
+**Install it from the [Chrome Web Store](https://chromewebstore.google.com/detail/tab-noise-tracker/kobbcpmekekmdpjichchfnicgbbbphmg).**
 
 It is the browser-tab sibling of [Windows Sound Tracker](https://github.com/IronAdamant/windows_sound_tracker). The Windows app can tell programs apart, but a browser's tabs share one audio process, so it cannot say which tab inside Chrome is the source. This extension fills that gap. Chrome already knows the tab: the `audible` flag marks a tab that is producing sound, and `mutedInfo` marks one that is muted.
 
@@ -98,14 +102,26 @@ A short cooldown (5 seconds) stops one tab from notifying and flashing again if 
 
 ## Install
 
-1. Clone or download this repository.
+### From the Chrome Web Store (recommended)
+
+1. Open [Tab Noise Tracker on the Chrome Web Store](https://chromewebstore.google.com/detail/tab-noise-tracker/kobbcpmekekmdpjichchfnicgbbbphmg).
+2. Choose **Add to Chrome**, then confirm.
+3. Pin **Tab Noise Tracker** if you want the badge in the toolbar.
+4. Optional: on the extension's details page, turn on **Allow in Incognito** if private windows should be included. The extension uses one shared copy (`"incognito": "spanning"`), so Focus mode and settings are the same ones. Private windows are labelled in the list.
+5. Optional: open `chrome://extensions/shortcuts` and confirm **Toggle Focus mode**.
+
+Chrome updates store installs automatically. A new version can reach the store a few days after its [GitHub release](https://github.com/IronAdamant/tab-noise-tracker/releases), because each store update goes through Google's review. The version you have is shown on `chrome://extensions`.
+
+### Load unpacked (for development or the newest release)
+
+1. Clone this repository, or download the zip from the [latest release](https://github.com/IronAdamant/tab-noise-tracker/releases/latest) and unzip it.
 2. Open `chrome://extensions`.
 3. Turn on **Developer mode**.
 4. Choose **Load unpacked**.
 5. Select the folder that contains `manifest.json` (the repository root, not a subfolder).
-6. Pin **Tab Noise Tracker** if you want the badge in the toolbar.
-7. Optional: on the extension's details page, turn on **Allow in Incognito** if private windows should be included. The extension uses one shared copy (`"incognito": "spanning"`), so Focus mode and settings are the same ones. Private windows are labelled in the list.
-8. Optional: open `chrome://extensions/shortcuts` and confirm **Toggle Focus mode**.
+6. Pin it, and set Incognito and the shortcut as in steps 3 to 5 above.
+
+If you already have the store version installed, turn it off first so the two copies do not both react to the same tabs.
 
 Chrome 114 or newer is required. There is nothing to compile and nothing to `npm install`.
 
@@ -147,7 +163,7 @@ Those checks cover settings limits (including the favicon-flash default, the vis
 
 ## Trying it in Chrome
 
-1. Load the extension unpacked.
+1. Install from the Chrome Web Store, or load the extension unpacked.
 2. Open two windows and play audio in one tab. The badge count should rise, and the popup should name the tab and the window.
 3. Mute, unmute, jump, and close from the popup. Mute from Chrome's own tab control too, with Focus mode on, and confirm sound follows an unmute.
 4. Turn Focus mode on. Only the active tab should stay unmuted. Switch tabs and confirm the previous noisy tab is muted and, while Visual alerts are on, flashes. Start audio in a background tab and confirm sound moves there. Turn Focus mode off and confirm the earlier mute states return. Restart Chrome and confirm Focus mode is still on.
